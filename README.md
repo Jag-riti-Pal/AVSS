@@ -1,4 +1,4 @@
-# 👁️ Smart CCTV 2.0: Edge-Assisted Autonomous Visual Surveillance System
+# 👁️ AVSS: Autonomous Visual Surveillance System
 
 An asynchronous, edge-optimized surveillance node built with **FastAPI**, **YOLOv8**, and **ByteTrack**. It replaces heuristic pixel-differencing algorithms with 2D vector tripwires, deep multi-target spatial tracking, rolling RAM pre-roll recording buffers, and privacy-first facial allowlisting.
 
@@ -40,3 +40,28 @@ An asynchronous, edge-optimized surveillance node built with **FastAPI**, **YOLO
                ├── Persist Event to SQLite (surveillance.db)
                │
                └── Asynchronous Telegram Push Notification
+
+## 🚀 Quickstart Guide
+
+Follow these steps to run the surveillance node locally on your machine.
+
+### 1. Prerequisites
+* **Python 3.10+**
+* Connected webcam (ID: `0`) or an active RTSP feed
+
+### 2. Clone the Repository
+```bash
+git clone [https://github.com/Jag-riti-Pal/AVSS.git](https://github.com/Jag-riti-Pal/AVSS.git)
+cd AVSS
+
+### 3. Install Dependencies
+Bash
+pip install -r requirements.txt
+
+### 4. Launch the Surveillance Engine
+Bash
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+
+### 5. Access the Dashboard
+Plaintext
+[http://127.0.0.1:8000/](http://127.0.0.1:8000/)
