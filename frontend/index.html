@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart CCTV 2.0 | Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h1 class="text-xl font-bold tracking-tight">Smart CCTV <span class="text-emerald-400">2.0</span></h1>
+            <span class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded">Autonomous Video Surveillance System</span>
+        </div>
+        <div id="connection-badge" class="text-xs font-semibold px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            CONNECTING
+        </div>
+    </header>
+
+    <!-- Main Viewport -->
+    <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto w-full">
+        
+        <!-- Left Section (3 Columns): Video Viewport + Security Audit Feed -->
+        <div class="lg:col-span-3 flex flex-col space-y-6">
+            
+            <!-- Video Player -->
+            <div class="relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl min-h-[460px] flex items-center justify-center">
+                <img id="cctv-stream" 
+                     src="http://127.0.0.1:8000/api/v1/stream" 
+                     alt="Live Stream Feed" 
+                     class="w-full h-full object-contain"
+                     onerror="handleStreamError()"
+                     onload="handleStreamConnected()"/>
+                
+                <div id="stream-fallback" class="hidden absolute flex flex-col items-center justify-center text-slate-500 space-y-2">
+                    <svg class="w-12 h-12 stroke-current" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="text-sm font-medium">Awaiting connection to backend video daemon...</span>
+                </div>
+            </div>
+
+            <!-- Live Incident Audit Feed (Under Video) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Recent Security Events</h2>
+                    <span class="text-xs text-slate-500 font-mono">Auto-refreshing via SQLite</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono uppercase">
+                            <tr>
+                                <th class="py-2.5 px-3">Time</th>
+                                <th class="py-2.5 px-3">Event</th>
+                                <th class="py-2.5 px-3">Identity</th>
+                                <th class="py-2.5 px-3">Status</th>
+                                <th class="py-2.5 px-3">Archived Clip</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-table-body" class="divide-y border-slate-800/60 font-mono">
+                            <tr>
+                                <td colspan="5" class="py-3 px-3 text-center text-slate-600">Awaiting events...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Section (1 Column): Controls & Telemetry Sidebar -->
+        <div class="space-y-6">
+            
+            <!-- Resident Enrollment Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-3">Enroll Resident</h2>
+                <form id="enroll-form" onsubmit="handleEnrollment(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Resident Name</label>
+                        <input type="text" id="resident-name" required placeholder="e.g. Mom"
+                               class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Face Photo</label>
+                        <input type="file" id="resident-photo" accept="image/*" required
+                               class="w-full text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-700">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-1.5 rounded transition">
+                        Enroll to Allowlist
+                    </button>
+                </form>
+                <p id="enroll-status" class="mt-2 text-[11px] text-slate-400 text-center"></p>
+            </div>
+
+            <!-- Live Spatial Counts Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Live Spatial Counts</h2>
+                    <button onclick="resetMetrics()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded transition">Reset</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg text-center">
+                        <span class="text-xs text-slate-400 block mb-1">Ingress (In)</span>
+                        <span id="metric-ingress" class="text-2xl font-bold font-mono text-emerald-400">0</span>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg text-center">
+                        <span class="text-xs text-slate-400 block mb-1">Egress (Out)</span>
+                        <span id="metric-egress" class="text-2xl font-bold font-mono text-rose-400">0</span>
+                    </div>
+                </div>
+                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg text-center">
+                    <span class="text-xs text-slate-400 block mb-1">Current Net Occupancy</span>
+                    <span id="metric-occupancy" class="text-2xl font-bold font-mono text-amber-400">0</span>
+                </div>
+            </div>
+
+            <!-- Sensor Telemetry Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4">Sensor Telemetry</h2>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between py-1 border-b border-slate-800/60">
+                        <span class="text-slate-400">Stream Status</span>
+                        <span id="telemetry-status" class="font-mono text-emerald-400">OFFLINE</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800/60">
+                        <span class="text-slate-400">Resolution</span>
+                        <span id="telemetry-resolution" class="font-mono text-slate-200">-- x --</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-800/60">
+                        <span class="text-slate-400">Hardware FPS</span>
+                        <span id="telemetry-fps" class="font-mono text-slate-200">--</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Source Identifier</span>
+                        <span id="telemetry-source" class="font-mono text-slate-200">0</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const streamImg = document.getElementById('cctv-stream');
+        const fallback = document.getElementById('stream-fallback');
+        const badge = document.getElementById('connection-badge');
+
+        function handleStreamError() {
+            streamImg.classList.add('hidden');
+            fallback.classList.remove('hidden');
+            badge.className = "text-xs font-semibold px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20";
+            badge.innerText = "DISCONNECTED";
+            document.getElementById('telemetry-status').innerText = "DISCONNECTED";
+            document.getElementById('telemetry-status').className = "font-mono text-rose-400";
+        }
+
+        function handleStreamConnected() {
+            streamImg.classList.remove('hidden');
+            fallback.classList.add('hidden');
+            badge.className = "text-xs font-semibold px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+            badge.innerText = "LIVE STREAMING";
+            document.getElementById('telemetry-status').innerText = "STREAMING";
+            document.getElementById('telemetry-status').className = "font-mono text-emerald-400";
+            pollTelemetry();
+            pollMetrics();
+            pollRecentEvents();
+        }
+
+        async function handleEnrollment(event) {
+            event.preventDefault();
+            const name = document.getElementById('resident-name').value;
+            const file = document.getElementById('resident-photo').files[0];
+            const statusText = document.getElementById('enroll-status');
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('file', file);
+
+            statusText.innerText = "Indexing face embedding...";
+            statusText.className = "mt-2 text-[11px] text-amber-400 text-center";
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/residents/enroll', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    statusText.innerText = `Enrolled: ${name}`;
+                    statusText.className = "mt-2 text-[11px] text-emerald-400 text-center";
+                    document.getElementById('enroll-form').reset();
+                } else {
+                    statusText.innerText = "Enrollment failed.";
+                    statusText.className = "mt-2 text-[11px] text-rose-400 text-center";
+                }
+            } catch (err) {
+                statusText.innerText = "Server connection error.";
+                statusText.className = "mt-2 text-[11px] text-rose-400 text-center";
+            }
+        }
+
+        async function pollRecentEvents() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/events/recent');
+                if (response.ok) {
+                    const events = await response.json();
+                    const tbody = document.getElementById('events-table-body');
+                    
+                    if (events.length === 0) return;
+
+                    tbody.innerHTML = events.map(ev => `
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="py-2 px-3 text-slate-400">${ev.timestamp}</td>
+                            <td class="py-2 px-3 font-semibold ${ev.event_type === 'INGRESS' ? 'text-emerald-400' : 'text-rose-400'}">${ev.event_type}</td>
+                            <td class="py-2 px-3">${ev.identity}</td>
+                            <td class="py-2 px-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] ${ev.is_resident ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
+                                    ${ev.is_resident ? 'RESIDENT' : 'STRANGER'}
+                                </span>
+                            </td>
+                            <td class="py-2 px-3 text-slate-500 truncate max-w-[150px]">${ev.clip_path ? ev.clip_path : 'None'}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) {
+                console.warn('Events polling paused.');
+            }
+        }
+
+        async function pollTelemetry() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/telemetry');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('telemetry-resolution').innerText = `${data.width} x ${data.height}`;
+                    document.getElementById('telemetry-fps').innerText = data.hardware_fps > 0 ? data.hardware_fps : '30 (sync)';
+                    document.getElementById('telemetry-source').innerText = data.source;
+                }
+            } catch (err) {
+                console.warn('Telemetry polling paused.');
+            }
+        }
+
+        async function pollMetrics() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/metrics');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('metric-ingress').innerText = data.ingress;
+                    document.getElementById('metric-egress').innerText = data.egress;
+                    document.getElementById('metric-occupancy').innerText = data.net_occupancy;
+                }
+            } catch (err) {
+                console.warn('Metrics polling error.');
+            }
+        }
+
+        async function resetMetrics() {
+            try {
+                await fetch('http://127.0.0.1:8000/api/v1/metrics/reset', { method: 'POST' });
+                pollMetrics();
+            } catch (err) {
+                console.error('Failed to reset metrics:', err);
+            }
+        }
+
+        // Initialize polling intervals
+        setInterval(() => {
+            if (!streamImg.classList.contains('hidden')) {
+                pollTelemetry();
+            }
+        }, 5000);
+
+        setInterval(pollMetrics, 1500);
+        setInterval(pollRecentEvents, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  smart-cctv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-cctv:2.0
+    container_name: smart_cctv_edge_node
+    restart: unless-stopped
+    network_mode: "host"  # Minimizes network latency for real-time video streaming
+    
+    # Pass physical host webcam directly into the container
+    devices:
+      - "/dev/video0:/dev/video0"
+
+    # Persist security recordings and allowlist faces on the host machine
+    volumes:
+      - ./recordings:/app/recordings
+      - ./data/residents:/app/data/residents
+      
+    # Optimize container memory limits for edge hardware
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1500M

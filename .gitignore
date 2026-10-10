@@ -1,0 +1,28 @@
+# Python bytecode & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Sensitive environment credentials
+.env
+
+# Local SQLite databases & cache
+surveillance.db
+*.db-wal
+*.db-shm
+
+# Security footage & enrollments
+recordings/
+data/residents/*
+!data/residents/.gitkeep
+
+# Weights & models (auto-downloaded via script)
+*.pt
+*.onnx
+
+# IDE configs
+.vscode/
+.idea/
