@@ -41,6 +41,8 @@ An asynchronous, edge-optimized surveillance node built with **FastAPI**, **YOLO
                │
                └── Asynchronous Telegram Push Notification
 
+```
+
 ## 🚀 Quickstart Guide
 
 Follow these steps to run the surveillance node locally on your machine.
@@ -53,15 +55,19 @@ Follow these steps to run the surveillance node locally on your machine.
 ```bash
 git clone [https://github.com/Jag-riti-Pal/AVSS.git](https://github.com/Jag-riti-Pal/AVSS.git)
 cd AVSS
+```
 
 ### 3. Install Dependencies
-Bash
+```bash
 pip install -r requirements.txt
+```
 
 ### 4. Launch the Surveillance Engine
-Bash
+```bash
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
 
 ### 5. Access the Dashboard
-Plaintext
+```Plaintext
 [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+```
